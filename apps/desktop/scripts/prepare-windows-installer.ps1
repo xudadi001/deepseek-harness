@@ -66,6 +66,19 @@ if ($TestProgress -or $CompileProgressOnly) {
         & $reportExecutable
         if ($LASTEXITCODE -ne 0) { throw 'Extraction report regression failed.' }
     }
+    # Reproduce NSIS changing into the staged install directory before spawning 7-Zip.
+    # The child must instead start in the temporary tool directory so it cannot inherit
+    # a working-directory handle that blocks promotion of the staged tree.
+    $cwdSource = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../tests/windows-installer-extract-cwd.cpp'))
+    $cwdExecutable = Join-Path $output 'extract-cwd-test.exe'
+    $cwdScript = Join-Path $output 'compile-extract-cwd-test.cmd'
+    [IO.File]::WriteAllLines($cwdScript, @('@echo off', ('call "{0}" >nul' -f $vcvars), 'if errorlevel 1 exit /b %errorlevel%', ('cl /nologo /MT /W4 /WX /EHsc "{0}" /Fo"{1}" /Fe"{2}"' -f $cwdSource, (Join-Path $output 'extract-cwd-test.obj'), $cwdExecutable)), [Text.Encoding]::Default)
+    & $env:ComSpec /d /c $cwdScript
+    if ($LASTEXITCODE -ne 0) { throw 'Extraction working-directory test compilation failed.' }
+    if ($TestProgress) {
+        & $cwdExecutable
+        if ($LASTEXITCODE -ne 0) { throw 'Extractor working-directory regression failed.' }
+    }
 }
 Add-Type -AssemblyName System.Drawing
 foreach ($asset in @('brand', 'brand-2x', 'brand-dark', 'brand-dark-2x', 'uninstaller-sidebar')) {
