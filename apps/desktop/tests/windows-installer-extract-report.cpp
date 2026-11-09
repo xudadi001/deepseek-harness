@@ -11,6 +11,8 @@ extern "C" __declspec(dllimport) int __cdecl InstallerReportExtractFailure(
     HWND parent, int code, LPCWSTR archive, LPCWSTR destination, LPCWSTR log, LPCWSTR reportPath, int show,
     LPCWSTR title, LPCWSTR heading, LPCWSTR hint, LPCWSTR copy, LPCWSTR expand, LPCWSTR collapse, LPCWSTR savedFormat, LPCWSTR unsaved, LPCWSTR copied);
 
+extern "C" __declspec(dllimport) int __cdecl InstallerFindProcess(LPCWSTR executable);
+
 extern "C" __declspec(dllimport) int __cdecl InstallerReportDirectoryFailure(
     HWND parent, DWORD error, LPCWSTR source, LPCWSTR destination, DWORD restoreError, LPCWSTR backup,
     LPCWSTR log, LPCWSTR reportPath, int show,
@@ -127,6 +129,18 @@ int wmain() {
     const std::wstring root = std::wstring(temp) + L"dsh-extract-report-" + std::to_wstring(GetCurrentProcessId());
     const BOOL created = CreateDirectoryW(root.c_str(), nullptr);
     assert(created);
+    // The running test executable represents a still-running bundled Host/CLI process.
+    // A different target executable name in its directory must be detected.
+    WCHAR selfImage[32768] = {};
+    const DWORD imageLength = GetModuleFileNameW(nullptr, selfImage, 32768);
+    assert(imageLength > 0 && imageLength < 32768);
+    const std::wstring image(selfImage);
+    const auto separator = image.find_last_of(L"\\/");
+    assert(separator != std::wstring::npos);
+    const std::wstring siblingExecutable = image.substr(0, separator + 1) + L"DeepSeek Harness.exe";
+    assert(InstallerFindProcess(siblingExecutable.c_str()) == 0);
+    // Do not reject a different installation solely because an executable has the same name.
+    assert(InstallerFindProcess((root + L"\\DeepSeek Harness.exe").c_str()) == 1);
     const std::wstring log = root + L"\\extract.log";
     WriteBytes(log, "ERROR: Cannot open output file : Access is denied. : C:\\Apps\\Harness.new-1\\\xE6\x96\x87\xE4\xBB\xB6.dll\r\n");
     const std::wstring reportPath = root + L"\\nested\\logs\\extract-failure.log";
@@ -156,6 +170,9 @@ int wmain() {
     for (const std::string& expected : {"Operation: MoveFileExW", "Windows error: 32", "Restoration error: 183",
         "Preserved backup: C:\\Apps\\\xE6\x96\x87\xE4\xBB\xB6.old"}) {
         assert(directorySaved.find(expected) != std::string::npos);
+    }
+    for (const std::string& evidence : {"Installer PID:", "Installer executable:", "Installer current directory:"}) {
+        assert(directorySaved.find(evidence) != std::string::npos);
     }
     assert(InstallerReportDirectoryFailure(nullptr, ERROR_ACCESS_DENIED, L"a", L"", 0, L"", log.c_str(), directoryReport.c_str(), 0,
         L"title", L"heading", L"hint", L"copy", L"expand", L"collapse", L"saved %s", L"unsaved", L"copied") == 1);
