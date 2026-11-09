@@ -18,6 +18,7 @@
     "INSTALLER_RUNNING": "DeepSeek Harness läuft. Beenden Sie es über die Taskleiste und versuchen Sie es erneut.",
     "INSTALLER_DIRECTORY_FAILED": "Das Installationsverzeichnis konnte nicht ersetzt werden.",
     "INSTALLER_DIRECTORY_HINT": "Überprüfen Sie den Zugriff auf das Installationsverzeichnis und schließen Sie Programme mithilfe seiner Dateien. Führen Sie dann das Installationsprogramm erneut aus. Kopieren Sie die Fehlerdetails, wenn das Problem weiterhin besteht.",
+    "INSTALLER_DIRECTORY_RETRY": "Schließen Sie Programme, die Dateien im Installationsordner verwenden, und wählen Sie „Wiederholen“. Mit „Abbrechen“ beenden Sie das Update und behalten die vorherige Version.",
     "INSTALLER_DIRECTORY_RESTORE_HINT": "Die vorherige Installation konnte nicht wiederhergestellt werden. Behalten Sie das in den Fehlerdetails angezeigte Sicherungsverzeichnis bei und wenden Sie sich vor der erneuten Installation an den Support.",
     "INSTALLER_PATH_INVALID": "Wählen Sie einen vollständigen lokalen Ordnerpfad. Laufwerksstämme, Systemordner, Links und Sonderzeichen werden nicht unterstützt.",
     "INSTALLER_PATH_OWNERSHIP": "Wählen Sie einen leeren Ordner oder den registrierten DeepSeek Harness-Installationsordner.",
