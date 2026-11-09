@@ -18,6 +18,7 @@
     "INSTALLER_RUNNING": "DeepSeek Harness 正在运行，请先在系统托盘中退出应用后重试。",
     "INSTALLER_DIRECTORY_FAILED": "无法替换安装目录。",
     "INSTALLER_DIRECTORY_HINT": "请检查安装目录的访问权限，关闭占用其中内容的程序后重新运行安装器。如仍失败，请复制错误详情。",
+    "INSTALLER_DIRECTORY_RETRY": "请关闭占用安装目录中文件的程序（包括编辑器、终端或资源管理器），然后点击“重试”。点击“取消”将停止升级并保留旧版本。",
     "INSTALLER_DIRECTORY_RESTORE_HINT": "未能恢复原安装目录。请保留错误详情中列出的备份目录，联系支持人员后再安装。",
     "INSTALLER_PATH_INVALID": "请选择本地磁盘上的完整文件夹路径，不能使用磁盘根目录、系统目录、链接目录或包含特殊字符的路径。",
     "INSTALLER_PATH_OWNERSHIP": "请选择空文件夹，或 DeepSeek Harness 原来的安装目录。",
