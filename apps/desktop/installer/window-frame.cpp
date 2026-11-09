@@ -18,13 +18,25 @@
 
 using namespace Gdiplus;
 
+static std::wstring InstallerProcessEvidence() {
+    // Capture our own state at failure time to identify self-held working-directory locks.
+    WCHAR current[32768] = {};
+    WCHAR executable[32768] = {};
+    const DWORD currentLength = GetCurrentDirectoryW(32768, current);
+    const DWORD executableLength = GetModuleFileNameW(nullptr, executable, 32768);
+    std::wstring evidence = L"\r\nInstaller PID: " + std::to_wstring(GetCurrentProcessId());
+    if (executableLength > 0 && executableLength < 32768) evidence += L"\r\nInstaller executable: " + std::wstring(executable);
+    if (currentLength > 0 && currentLength < 32768) evidence += L"\r\nInstaller current directory: " + std::wstring(current);
+    return evidence + L"\r\n";
+}
+
 // Returns whether the UTF-8 report was saved; failure still presents the original error unless silent.
 extern "C" __declspec(dllexport) int __cdecl InstallerReportDirectoryFailure(
     HWND parent, DWORD error, LPCWSTR source, LPCWSTR destination, DWORD restoreError, LPCWSTR backup,
     LPCWSTR log, LPCWSTR reportPath, int show, LPCWSTR title, LPCWSTR heading, LPCWSTR hint, LPCWSTR copy,
     LPCWSTR expand, LPCWSTR collapse, LPCWSTR savedFormat, LPCWSTR unsaved, LPCWSTR copied) {
     try {
-        const std::wstring report = directory_report::Compose(error, source, destination, restoreError, backup, extract_report::ReadOutput(log));
+        const std::wstring report = directory_report::Compose(error, source, destination, restoreError, backup, extract_report::ReadOutput(log) + InstallerProcessEvidence();
         const bool saved = extract_report::WriteUtf8(reportPath, report);
         if (show) {
             std::wstring footer = saved ? savedFormat : unsaved;
