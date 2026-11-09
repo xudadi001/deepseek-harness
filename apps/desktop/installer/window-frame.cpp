@@ -87,14 +87,20 @@ extern "C" __declspec(dllexport) DWORD __cdecl UninstallRemoveEmptyParents(LPCWS
     return uninstall_data::RemoveEmptyParents(path, stop);
 }
 
-// Match the affected executable, not another user's or directory's same-named application.
-// Returns 0 while running, 1 when absent, and -1 if the process list cannot be read.
+// A Desktop main window may have exited while its bundled Host, CLI, or runtime
+// executable still runs from the same install tree. Such a process can hold files
+// open and prevent the whole-directory MoveFileExW transaction from succeeding.
+// Only match processes whose *image path* is inside this exact installation root;
+// another user's same-named process elsewhere must not block this installation.
+// Returns 0 while any installation process runs, 1 when absent, or -1 when
+// process enumeration fails.
 extern "C" __declspec(dllexport) int __cdecl InstallerFindProcess(LPCWSTR executable) {
     WCHAR target[32768];
-    DWORD length = GetLongPathNameW(executable, target, ARRAYSIZE(target));
-    LPCWSTR expected = length > 0 && length < ARRAYSIZE(target) ? target : executable;
-    LPCWSTR filename = wcsrchr(expected, L'\\');
-    filename = filename ? filename + 1 : expected;
+    const DWORD length = GetLongPathNameW(executable, target, ARRAYSIZE(target));
+    const LPCWSTR expected = length > 0 && length < ARRAYSIZE(target) ? target : executable;
+    const LPCWSTR separator = wcsrchr(expected, L'\\');
+    if (!separator) return -1;
+    const size_t rootLength = static_cast<size_t>(separator - expected) + 1;
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) return -1;
     PROCESSENTRY32W entry = {};
@@ -102,15 +108,14 @@ extern "C" __declspec(dllexport) int __cdecl InstallerFindProcess(LPCWSTR execut
     int result = 1;
     BOOL present = Process32FirstW(snapshot, &entry);
     while (present) {
-        if (_wcsicmp(entry.szExeFile, filename) == 0) {
-            HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, entry.th32ProcessID);
-            if (process) {
-                WCHAR path[32768];
-                DWORD count = ARRAYSIZE(path);
-                if (QueryFullProcessImageNameW(process, 0, path, &count) && _wcsicmp(path, expected) == 0) result = 0;
-                CloseHandle(process);
-                if (result == 0) break;
-            }
+        HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, entry.th32ProcessID);
+        if (process) {
+            WCHAR path[32768] = {};
+            DWORD count = ARRAYSIZE(path);
+            if (QueryFullProcessImageNameW(process, 0, path, &count) && count >= rootLength &&
+                _wcsnicmp(path, expected, rootLength) == 0) result = 0;
+            CloseHandle(process);
+            if (result == 0) break;
         }
         present = Process32NextW(snapshot, &entry);
     }
