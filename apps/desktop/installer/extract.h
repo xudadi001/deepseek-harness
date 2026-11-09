@@ -66,9 +66,18 @@ static int ExtractApplication(HWND parent, LPCWSTR tool, LPCWSTR archive, LPCWST
     // A final dot prevents a destination's trailing backslash from escaping its closing quote.
     // Error output is UTF-8 so the failure report can quote paths from any code page.
     std::wstring command = L"\"" + std::wstring(tool) + L"\" x -y -bso0 -bse2 -bsp1 -bb0 -sccUTF-8 \"-o" + destination + L"\\.\" \"" + archive + L"\"";
+    // NSIS temporarily sets its working directory to the staged application tree.
+    // A child that inherits that directory (or passes it on to its own children)
+    // can prevent MoveFileExW from promoting the staged tree on Windows.
+    // Launch the extractor from the installer's own temporary tool directory instead.
+    const std::wstring executable(tool);
+    const std::wstring::size_type separator = executable.find_last_of(L"\\/");
+    if (separator == std::wstring::npos) return LaunchFailure(ERROR_INVALID_NAME);
+    const std::wstring workingDirectory = executable.substr(0, separator + 1);
     PROCESS_INFORMATION child = {};
     if (!CreateProcessW(tool, &command[0], nullptr, nullptr, TRUE,
-        EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW, nullptr, nullptr, &startup.StartupInfo, &child)) return LaunchFailure(GetLastError());
+        EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW, nullptr, workingDirectory.c_str(),
+        &startup.StartupInfo, &child)) return LaunchFailure(GetLastError());
     InstallerHandle process(child.hProcess), thread(child.hThread);
     output.Close();
     errors.Close();
