@@ -18,6 +18,7 @@
     "INSTALLER_RUNNING": "DeepSeek Harness is running. Quit it from the system tray and try again.",
     "INSTALLER_DIRECTORY_FAILED": "The installation directory could not be replaced.",
     "INSTALLER_DIRECTORY_HINT": "Check access to the installation directory and close programs using its files, then run the installer again. Copy the error details if the problem persists.",
+    "INSTALLER_DIRECTORY_RETRY": "Close programs using files in the installation directory, then select Retry. Select Cancel to stop and preserve the previous installation.",
     "INSTALLER_DIRECTORY_RESTORE_HINT": "The previous installation could not be restored. Keep the backup directory shown in the error details and contact support before installing again.",
     "INSTALLER_PATH_INVALID": "Choose a full local folder path. Drive roots, system folders, links and special characters are not supported.",
     "INSTALLER_PATH_OWNERSHIP": "Choose an empty folder or the registered DeepSeek Harness installation folder.",
