@@ -67,7 +67,7 @@ int wmain(int argc, wchar_t** argv) {
     const BOOL read = ReadFile(record, observed, sizeof(observed), &bytes, nullptr);
     CloseHandle(record);
     assert(read && bytes >= sizeof(WCHAR) && bytes % sizeof(WCHAR) == 0);
-    assert(observed[bytes / sizeof(WCHAR) - 1] == L'\\0');
+    assert(observed[bytes / sizeof(WCHAR) - 1] == L'\0');
 
     // The extracted payload root and the extractor's CWD must differ.
     std::wstring childDirectory(observed);
