@@ -49,3 +49,20 @@ it.each(['!include installer.nsh', '!insertmacro setLinkVars', '!insertmacro ins
     expect(() => directoryInstallSection(`${section}\n${point}`)).toThrow('Desktop NSIS template changed')
   },
 )
+
+it('offers an interactive retry for directory locks without weakening silent rollback', () => {
+  const script = readFileSync(join(import.meta.dirname, '../scripts/installer-directories.nsh'), 'utf8')
+  expect(script).toContain('!macro dshDirectoryOperationWithRetry SOURCE DESTINATION RESULT PHASE')
+  const retry = script.split('!macro dshDirectoryOperationWithRetry SOURCE DESTINATION RESULT PHASE')[1]
+    ?.split('!macroend')[0]
+  expect(retry).toBeDefined()
+  expect(retry).toContain('!insertmacro dshDirectoryOperation "${SOURCE}" "${DESTINATION}" ${RESULT} "${PHASE}"')
+  expect(retry).toContain('${If} ${Silent}')
+  for (const error of [5, 32, 33]) expect(retry).toContain('${RESULT} != ' + error)
+  expect(retry).toContain('MessageBox MB_RETRYCANCEL')
+  expect(retry).toContain('$(INSTALLER_DIRECTORY_RETRY)')
+  // The transaction also retries restoration; cancellation still reports the real Win32 error.
+  expect(script.match(/!insertmacro dshDirectoryOperationWithRetry "/g)).toHaveLength(4)
+  expect(script).toContain('Call dshRollbackDirectories')
+  expect(script).toContain('StrCpy $dshRecoveryStopped "1"')
+})
