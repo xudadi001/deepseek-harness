@@ -18,6 +18,7 @@
     "INSTALLER_RUNNING": "DeepSeek Harness está em execução. Saia da bandeja do sistema e tente novamente.",
     "INSTALLER_DIRECTORY_FAILED": "O diretório de instalação não pôde ser substituído.",
     "INSTALLER_DIRECTORY_HINT": "Verifique o acesso ao diretório de instalação e feche os programas usando seus arquivos e execute o instalador novamente. Copie os detalhes do erro se o problema persistir.",
+    "INSTALLER_DIRECTORY_RETRY": "Feche os programas que estejam usando arquivos da pasta de instalação e selecione Tentar novamente. Selecione Cancelar para interromper a atualização e manter a versão anterior.",
     "INSTALLER_DIRECTORY_RESTORE_HINT": "A instalação anterior não pôde ser restaurada. Mantenha o diretório de backup mostrado nos detalhes do erro e entre em contato com o suporte antes de instalar novamente.",
     "INSTALLER_PATH_INVALID": "Escolha um caminho completo para a pasta local. Raízes de unidade, pastas de sistema, links e caracteres especiais não são suportados.",
     "INSTALLER_PATH_OWNERSHIP": "Escolha uma pasta vazia ou a pasta de instalação DeepSeek Harness registrada.",
