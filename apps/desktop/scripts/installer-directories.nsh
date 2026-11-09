@@ -60,6 +60,38 @@ Var dshRecoveryStopped
   Pop $0
 !macroend
 
+; External editors, terminals and shell windows can keep the installed directory in
+; use after the application exits. Let interactive installers retry after users close
+; those handles; silent installs must remain bounded with their original failure path.
+!macro dshDirectoryOperationWithRetry SOURCE DESTINATION RESULT PHASE
+  !ifmacrodef customInstallerDirectoryFailed
+    Push $R9
+    ${Do}
+      !insertmacro dshDirectoryOperation "${SOURCE}" "${DESTINATION}" ${RESULT} "${PHASE}"
+      ${If} ${RESULT} == 0
+        ${ExitDo}
+      ${EndIf}
+      ${If} ${Silent}
+        ${ExitDo}
+      ${EndIf}
+      ${If} ${RESULT} != 5
+      ${AndIf} ${RESULT} != 32
+      ${AndIf} ${RESULT} != 33
+        ${ExitDo}
+      ${EndIf}
+      StrCpy $R9 0
+      MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "$(INSTALLER_DIRECTORY_RETRY)" IDRETRY +2
+        StrCpy $R9 1
+      ${If} $R9 == 1
+        ${ExitDo}
+      ${EndIf}
+    ${Loop}
+    Pop $R9
+  !else
+    !insertmacro dshDirectoryOperation "${SOURCE}" "${DESTINATION}" ${RESULT} "${PHASE}"
+  !endif
+!macroend
+
 !macro dshReportDirectoryFailure
   ${If} $dshRestoreError != 0
     StrCpy $dshRecoveryStopped "1"
@@ -152,7 +184,7 @@ Function dshRollbackDirectories
     StrCpy $dshNewMoved ""
   ${EndIf}
   ${If} $dshOldMoved == "1"
-    !insertmacro dshDirectoryOperation "$dshOldDirectory" "$dshFinalDirectory" $dshRestoreError "restore"
+    !insertmacro dshDirectoryOperationWithRetry "$dshOldDirectory" "$dshFinalDirectory" $dshRestoreError "restore"
     ${If} $dshRestoreError != 0
       ; Leave the complete backup in place if another process prevents restoration.
       DetailPrint $dshOldDirectory
@@ -177,7 +209,7 @@ Function dshPromoteDirectories
   ${If} ${FileExists} "$dshFinalDirectory\*.*"
     StrCpy $dshDirectorySource $dshFinalDirectory
     StrCpy $dshDirectoryDestination $dshOldDirectory
-    !insertmacro dshDirectoryOperation "$dshDirectorySource" "$dshDirectoryDestination" $dshDirectoryError "backup"
+    !insertmacro dshDirectoryOperationWithRetry "$dshDirectorySource" "$dshDirectoryDestination" $dshDirectoryError "backup"
     ${If} $dshDirectoryError != 0
       Call dshRollbackDirectories
       !insertmacro dshReportDirectoryFailure
@@ -189,7 +221,7 @@ Function dshPromoteDirectories
     ; NSIS can create the destination before the install section starts.
     StrCpy $dshDirectorySource $dshFinalDirectory
     StrCpy $dshDirectoryDestination ""
-    !insertmacro dshDirectoryOperation "$dshDirectorySource" "" $dshDirectoryError "remove-empty"
+    !insertmacro dshDirectoryOperationWithRetry "$dshDirectorySource" "" $dshDirectoryError "remove-empty"
     ${If} $dshDirectoryError != 0
       Call dshRollbackDirectories
       !insertmacro dshReportDirectoryFailure
@@ -200,7 +232,7 @@ Function dshPromoteDirectories
   ClearErrors
   StrCpy $dshDirectorySource $dshNewDirectory
   StrCpy $dshDirectoryDestination $dshFinalDirectory
-  !insertmacro dshDirectoryOperation "$dshDirectorySource" "$dshDirectoryDestination" $dshDirectoryError "promote"
+  !insertmacro dshDirectoryOperationWithRetry "$dshDirectorySource" "$dshDirectoryDestination" $dshDirectoryError "promote"
   ${If} $dshDirectoryError != 0
     Call dshRollbackDirectories
     !insertmacro dshReportDirectoryFailure
